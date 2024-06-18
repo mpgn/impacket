@@ -1289,7 +1289,9 @@ class INTERFACE:
                 LOG.debug('StringBinding chosen: %s' % stringBinding)
                 if stringBinding is None:
                     # Something wen't wrong, let's just report it
-                    raise Exception('Can\'t find a valid stringBinding to connect')
+                    # raise Exception('Can\'t find a valid stringBinding to connect')
+                    stringBinding = 'ncacn_ip_tcp:%s%s' % (self.get_target(), bindingPort)
+                    LOG.info('Can\'t find a valid stringBinding to connect,use default!')
 
                 dcomInterface = transport.DCERPCTransportFactory(stringBinding)
 
