@@ -1294,7 +1294,7 @@ class INTERFACE:
                     LOG.info('Can\'t find a valid stringBinding to connect,use default!')
 
                 dcomInterface = transport.DCERPCTransportFactory(stringBinding)
-
+                """
                 if DCOMConnection.PORTMAPS[self.__target].get_rpc_transport().get_kerberos():
                     dcomInterface.setRemoteHost(DCOMConnection.PORTMAPS[self.__target].get_rpc_transport().getRemoteHost())
                     dcomInterface.setRemoteName(DCOMConnection.PORTMAPS[self.__target].get_rpc_transport().getRemoteName())
@@ -1304,6 +1304,7 @@ class INTERFACE:
                     dcomInterface.set_credentials(*DCOMConnection.PORTMAPS[self.__target].get_credentials())
                     dcomInterface.set_kerberos(DCOMConnection.PORTMAPS[self.__target].get_rpc_transport().get_kerberos(),
                                                DCOMConnection.PORTMAPS[self.__target].get_rpc_transport().get_kdcHost())
+                """
                 dcomInterface.set_connect_timeout(300)
                 dce = dcomInterface.get_dce_rpc()
 
