@@ -78,6 +78,8 @@ class SMBConnection:
         self._kdcHost = None
         self._useCache = True
         self._ntlmFallback = True
+        # Callables run by logoff() while the session is still usable, e.g. RemoteOperations.finish()
+        self._logoffCallbacks = []
 
         if existingConnection is not None:
             # Existing Connection must be a smb or smb3 instance
@@ -356,7 +358,37 @@ class SMBConnection:
         except (smb.SessionError, smb3.SessionError) as e:
             raise SessionError(e.get_error_code(), e.get_error_packet())
 
+    def registerLogoffCallback(self, callback):
+        """
+        Registers a callable run by logoff() (and so by close()) before the session is logged off
+
+        :param callable callback: called with no arguments; registering the same callable twice has no effect
+
+        :return: None
+        """
+        if callback not in self._logoffCallbacks:
+            self._logoffCallbacks.append(callback)
+
+    def unregisterLogoffCallback(self, callback):
+        """
+        Removes a callable registered with registerLogoffCallback()
+
+        :param callable callback: the callable to remove
+
+        :return: None
+        """
+        if callback in self._logoffCallbacks:
+            self._logoffCallbacks.remove(callback)
+
     def logoff(self):
+        # Run the registered callbacks first, most recent first, while the session can still be used.
+        # Each one runs once; a failing callback is logged and does not prevent the logoff.
+        while self._logoffCallbacks:
+            callback = self._logoffCallbacks.pop()
+            try:
+                callback()
+            except Exception as e:
+                LOG.error('Error in logoff callback %r: %s' % (callback, e))
         try:
             return self._SMBConnection.logoff()
         except (smb.SessionError, smb3.SessionError) as e:

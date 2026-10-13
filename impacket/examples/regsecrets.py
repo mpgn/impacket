@@ -172,6 +172,7 @@ class RemoteOperations:
             time.sleep(1)
 
     def enableRegistry(self):
+        self.__registerLogoffCleanup()
         self.__connectSvcCtl()
         self.__checkServiceStatus()
         self.__connectWinReg()
@@ -215,7 +216,19 @@ class RemoteOperations:
                 # show this exception message
                 pass
 
+    def __registerLogoffCleanup(self):
+        # Restore the remote state when the SMB session is logged off (logoff() or close()),
+        # so a caller that never calls finish() does not leave the target modified
+        if hasattr(self.__smbConnection, 'registerLogoffCallback'):
+            self.__smbConnection.registerLogoffCallback(self.finish)
+
+    def __unregisterLogoffCleanup(self):
+        if hasattr(self.__smbConnection, 'unregisterLogoffCallback'):
+            self.__smbConnection.unregisterLogoffCallback(self.finish)
+
     def finish(self):
+        # finish() runs once: the session logoff must not run it again
+        self.__unregisterLogoffCleanup()
         if self.__regHandle is not None:
             rrp.hBaseRegCloseKey(self.__rrp, self.__regHandle)
         self.__restore()
